@@ -1,0 +1,4 @@
+file(GLOB TestSource *.c *.cpp)
+do_unit_test(test_capture test_main_inlet.cpp)
+target_sources(test_capture PRIVATE ${TestSource})
+target_link_libraries(test_capture PRIVATE modcapture)

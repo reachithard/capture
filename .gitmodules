@@ -1,0 +1,6 @@
+[submodule "thirdparty/libpcap"]
+	path = thirdparty/libpcap
+	url = git@github.com:the-tcpdump-group/libpcap.git
+[submodule "thirdparty/gtest"]
+	path = thirdparty/gtest
+	url = git@github.com:google/googletest.git
