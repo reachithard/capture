@@ -1,30 +1,33 @@
-#ifndef _DEVICE_H_
-#define _DEVICE_H_
+#ifndef _CAP_DEVICE_H_
+#define _CAP_DEVICE_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
-#include "ifaddrs.h"
+#include "cap_ifaddrs.h"
 #include "local_addr.h"
 
 namespace Capture {
-class Device {
+class CapDevice {
  public:
-  Device();
-  ~Device();
+  CapDevice();
+  ~CapDevice();
 
-  int Init(ifaddrs *addr);
+  int32_t Init(ifaddrs *addr);
 
   const char *GetName() const { return name.c_str(); }
+
+  bool UpRunning();
 
  private:
   std::string name;
 
-  unsigned int flags; /* Flags as from SIOCGIFFLAGS ioctl.  */
+  uint32_t flags; /* Flags as from SIOCGIFFLAGS ioctl.  */
 
   /* Network address of this interface.  */
   std::unique_ptr<LocalAddr> localAddr;
 };
 }  // namespace Capture
 
-#endif  // _DEVICE_H_
+#endif  // _CAP_DEVICE_H_

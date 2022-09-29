@@ -10,3 +10,4 @@ message("deps install ${CMAKE_INSTALL_PREFIX}")
 
 INCLUDE(cmake/gtest.cmake)
 INCLUDE(cmake/libpcap.cmake)
+INCLUDE(cmake/spdlog.cmake)

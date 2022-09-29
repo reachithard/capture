@@ -13,9 +13,14 @@ if(DOWNLOAD_THIRDPARTY)
     add_subdirectory(deps)
 endif()
 
+# 设置cmake module path路径便于find_package
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 # 链接interface 便于开发
 INCLUDE(cmake/utils/intf.cmake)
 INCLUDE(cmake/utils/gtest.cmake)
+INCLUDE(cmake/utils/spdlog.cmake)
+INCLUDE(cmake/utils/pcap.cmake)
 
 set(CAPTURE_MAJOR_VERSION 0)
 set(CAPTURE_MINOR_VERSION 0)

@@ -26,7 +26,8 @@ ADD_LIBRARY(intf INTERFACE)
 #						$<$<BOOL:${ENABLE_COV}>:-lgcov>)
 
 TARGET_INCLUDE_DIRECTORIES(intf INTERFACE 
-                                ${BASE_DIR}/src)
+                                ${BASE_DIR}/src
+								${BASE_DIR}/src/utils)
 
 TARGET_COMPILE_OPTIONS(intf INTERFACE 
 						-Wall
