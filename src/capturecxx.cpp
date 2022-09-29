@@ -19,27 +19,53 @@ int32_t CaptureCxx::Init(const CaptureInitt *config) {
   init.promise = config->promise;
   init.snaplen = config->snaplen;
 
+  protocol = std::make_unique<CapProtocol>();
   for (uint32_t idx = 0; idx < devices.size(); idx++) {
     char buffer[CAP_ERRORBUFFER_SIZE] = {0};
     std::unique_ptr<CapHandle> handle = std::make_unique<CapHandle>();
     if (handle != nullptr) {
-      // TODO 进行callback插入
+      // 进行callback插入
       init.device = devices[0]->GetName();
       init.errorbuf = buffer;
       if (handle->OpenLive(&init) != 0) {
         continue;
       }
 
+      std::function<int32_t(u_char *, const struct pcap_pkthdr *,
+                            const u_char *)>
+          callback = [this](u_char *ctx, const struct pcap_pkthdr *head,
+                            const u_char *packet) -> int32_t {
+        protocol->Init();
+        return 0;
+      };
+
+      handle->SetCallback(callback);
       ret = handle->SetNonBlock(1, buffer);
       if (ret != 0) {
         continue;
       }
+      handles.push_back(std::move(handle));
+    }
+  }
+
+  return 0;
+}
+
+int32_t CaptureCxx::Update(int32_t cnt) {
+  int32_t ret = 0;
+  for (uint32_t idx = 0; idx < handles.size(); idx++) {
+    LOG_DEBUG("start dispatch");
+    ret = handles[idx]->Dispatch(cnt, (u_char *)(handles[idx].get()));
+    if (ret < 0) {
+      LOG_ERROR("error dispatcher");
+    } else if (ret != 0) {
+      LOG_DEBUG("get data size:{}", ret);
+    } else {
+      LOG_DEBUG("get zero");
     }
   }
   return 0;
 }
-
-int32_t CaptureCxx::Update() { return 0; }
 
 int32_t CaptureCxx::Shutdown() { return 0; }
 

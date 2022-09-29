@@ -39,13 +39,11 @@ class CapHandle : public Nocopy {
 
   int32_t OpenLive(const CapHandleInit_t* config);
 
-  void AddCallback(
-      CapPacketType type,
-      std::function<int32_t(int32_t, const struct pcap_pkthdr*, const u_char*)>
+  void SetCallback(
+      std::function<int32_t(u_char*, const struct pcap_pkthdr*, const u_char*)>
           callback);
 
-  int32_t Dispatch(int32_t cnt, u_char* user, int32_t size,
-                   pcap_handler callback, u_char* ctx);
+  int32_t Dispatch(int32_t cnt, u_char* ctx);
 
   int32_t DataLink() const { return linktype; }
 
@@ -57,6 +55,9 @@ class CapHandle : public Nocopy {
 
   int32_t GetFd() const { return fd; }
 
+  static void HandlePacket(u_char* ctx, const struct pcap_pkthdr* header,
+                           const u_char* packet);
+
  private:
   pcap_t* handle = nullptr;
   int32_t linktype;
@@ -64,10 +65,8 @@ class CapHandle : public Nocopy {
   int32_t userdataSize;
   std::string device;
   int32_t fd = -1;
-  std::unordered_map<
-      CapPacketType,
-      std::function<int32_t(int32_t, const struct pcap_pkthdr*, const u_char*)>>
-      callbacks;
+  std::function<int32_t(u_char*, const struct pcap_pkthdr*, const u_char*)>
+      callback = nullptr;
 };
 }  // namespace Capture
 

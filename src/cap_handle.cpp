@@ -62,21 +62,18 @@ int32_t CapHandle::OpenLive(const CapHandleInit_t* config) {
   return 0;
 }
 
-void CapHandle::AddCallback(
-    CapPacketType type,
-    std::function<int32_t(int32_t, const struct pcap_pkthdr*, const u_char*)>
-        callback) {
-  callbacks[type] = callback;
+void CapHandle::SetCallback(
+    std::function<int32_t(u_char*, const struct pcap_pkthdr*, const u_char*)>
+        para) {
+  LOG_DEBUG("set call back");
+  callback = para;
 }
 
-int32_t CapHandle::Dispatch(int32_t cnt, u_char* user, int32_t size,
-                            pcap_handler callback, u_char* ctx) {
+int32_t CapHandle::Dispatch(int32_t cnt, u_char* ctx) {
   if (handle == nullptr) {
     return CAP_HANDLE_INIT;
   }
-  userdata = user;
-  userdataSize = size;
-  return pcap_dispatch(handle, cnt, callback, ctx);
+  return pcap_dispatch(handle, cnt, CapHandle::HandlePacket, ctx);
 }
 
 int32_t CapHandle::SetNonBlock(int32_t fd, char* err) {
@@ -91,5 +88,15 @@ char* CapHandle::GetError() {
     return nullptr;
   }
   return pcap_geterr(handle);
+}
+
+void CapHandle::HandlePacket(u_char* ctx, const struct pcap_pkthdr* header,
+                             const u_char* packet) {
+  CapHandle* handle = (CapHandle*)ctx;
+  if (handle == nullptr || handle->callback == nullptr) {
+    LOG_ERROR("get error handle");
+    return;
+  }
+  handle->callback(ctx, header, packet);
 }
 }  // namespace Capture
