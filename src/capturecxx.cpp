@@ -18,15 +18,16 @@ int32_t CaptureCxx::Init(const CaptureInitt *config) {
   init.ms = config->ms;
   init.promise = config->promise;
   init.snaplen = config->snaplen;
+  char buffer[CAP_ERRORBUFFER_SIZE] = {0};
+  init.errorbuf = buffer;
 
   protocol = std::make_unique<CapProtocol>();
   for (uint32_t idx = 0; idx < devices.size(); idx++) {
-    char buffer[CAP_ERRORBUFFER_SIZE] = {0};
     std::unique_ptr<CapHandle> handle = std::make_unique<CapHandle>();
     if (handle != nullptr) {
       // 进行callback插入
-      init.device = devices[0]->GetName();
-      init.errorbuf = buffer;
+      init.device = devices[idx]->GetName();
+
       if (handle->OpenLive(&init) != 0) {
         continue;
       }
@@ -35,8 +36,7 @@ int32_t CaptureCxx::Init(const CaptureInitt *config) {
                             const u_char *)>
           callback = [this](u_char *ctx, const struct pcap_pkthdr *head,
                             const u_char *packet) -> int32_t {
-        protocol->Init();
-        return 0;
+        return protocol->Parse(ctx, head, packet);
       };
 
       handle->SetCallback(callback);

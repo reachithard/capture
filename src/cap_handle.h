@@ -30,6 +30,26 @@ typedef struct CapHandleInit_s {
   char* errorbuf = nullptr;
 } CapHandleInit_t;
 
+typedef struct CtxIp4_s {
+  in_addr ip_src;
+  in_addr ip_dst;
+} CtxIp4_t;
+
+typedef struct CtxIp6_s {
+  in6_addr ip6_src;
+  in6_addr ip6_dst;
+} CtxIp6_t;
+
+union CtxAddr {
+  CtxIp4_t ip4;
+  CtxIp6_t ip6;
+};
+
+typedef struct PcapCtx_s {
+  int32_t family = AF_UNSPEC;
+  CtxAddr addr;
+} PcapCtx_t;
+
 #define CAP_ERRORBUFFER_SIZE PCAP_ERRBUF_SIZE
 
 class CapHandle : public Nocopy {
@@ -61,10 +81,9 @@ class CapHandle : public Nocopy {
  private:
   pcap_t* handle = nullptr;
   int32_t linktype;
-  u_char* userdata;
-  int32_t userdataSize;
   std::string device;
   int32_t fd = -1;
+  PcapCtx_t context;
   std::function<int32_t(u_char*, const struct pcap_pkthdr*, const u_char*)>
       callback = nullptr;
 };
