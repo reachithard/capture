@@ -2,6 +2,7 @@
 #define _PROCESS_H_
 
 #include <string>
+#include <vector>
 
 namespace Capture {
 
@@ -19,13 +20,15 @@ class Process {
 
   int32_t Parse();
 
+  const std::vector<uint32_t>& GetInodes() const { return inodes; }
+
   void Reset() {
     name.clear();
     cmdline.clear();
     user.clear();
     pid = -1;
     uid = 0;
-    inode = 0;  // inode应该不止一个
+    inodes.clear();  // inode应该不止一个
     memory = 0;
     cpuPercent = 0.0;
     memPercent = 0.0;
@@ -49,6 +52,8 @@ class Process {
 
   int32_t ParseUserAndGroup();
 
+  int32_t ParseNetInfo();
+
  private:
   std::string name;
   std::string cmdline;
@@ -57,7 +62,7 @@ class Process {
   pid_t pid = -1;
   uid_t uid = 0;
   gid_t gid = 0;
-  uint32_t inode = 0;  // inode应该不止一个
+  std::vector<uint32_t> inodes;
   uint32_t fdCnt = 0;
   uint64_t memory = 0;
   double cpuPercent = 0.0;

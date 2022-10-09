@@ -1,5 +1,6 @@
 #include "process.h"
 
+#include <dirent.h>
 #include <grp.h>
 #include <inttypes.h>
 #include <pwd.h>
@@ -34,15 +35,15 @@ int32_t Process::ParseProc() {
     return ret;
   }
 
-  ret = ParseIo();
-  if (ret != 0) {
-    return ret;
-  }
+  ParseIo();  // io有可能失败 因为没有权限
 
   ret = ParseUserAndGroup();
   if (ret != 0) {
     return ret;
   }
+
+  inodes.clear();
+  ParseNetInfo();
 
   return ret;
 }
@@ -161,13 +162,53 @@ int32_t Process::ParseUserAndGroup() {
   return 0;
 }
 
+int32_t Process::ParseNetInfo() {
+  char dirname[128] = {0};
+  sprintf(dirname, "/proc/%d/fd", pid);
+
+  DIR *dir = opendir(dirname);
+  if (!dir) {
+    return CAP_PROCESS_OPEN_DIR;
+  }
+
+  dirent *entry;
+  uint32_t cnt = 0;
+  while ((entry = readdir(dir))) {
+    if (entry->d_type != DT_LNK) {
+      continue;
+    }
+
+    std::string fromName = std::string(dirname) + "/" + entry->d_name;
+    constexpr int32_t linklen = 80;
+    char linkname[linklen] = {0};
+    int usedlen = readlink(fromName.c_str(), linkname, linklen - 1);
+    if (usedlen == -1) {
+      continue;
+    }
+    LOG_DEBUG("link:{}", linkname);
+    uint32_t inode = 0;
+    if (sscanf(linkname, "socket:[ %" PRId32 "]", &inode)) {
+      inodes.push_back(inode);
+    }
+    cnt++;
+  }
+  fdCnt = cnt;
+  closedir(dir);
+  return 0;
+}
+
 void Process::Info() {
   std::cout << "name:" << name << " cmdline:" << cmdline << " user:" << user
             << " group:" << group << " pid:" << pid << " uid:" << uid
-            << " gid:" << gid << " inode:" << inode << " fdCnt:" << fdCnt
-            << " memory:" << memory << " cpuPercent:" << cpuPercent
-            << " memPercent:" << memPercent << " ioRead:" << ioRead
-            << " ioWrite:" << ioWrite << " recv:" << recv << " send:" << send
-            << std::endl;
+            << " gid:" << gid << " fdCnt:" << fdCnt << " memory:" << memory
+            << " cpuPercent:" << cpuPercent << " memPercent:" << memPercent
+            << " ioRead:" << ioRead << " ioWrite:" << ioWrite
+            << " recv:" << recv << " send:" << send;
+
+  std::cout << " inodes:";
+  for (uint32_t idx = 0; idx < inodes.size(); idx++) {
+    std::cout << inodes[idx] << ",";
+  }
+  std::cout << std::endl;
 }
 }  // namespace Capture
