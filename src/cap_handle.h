@@ -78,6 +78,20 @@ class CapHandle : public Nocopy {
   static void HandlePacket(u_char* ctx, const struct pcap_pkthdr* header,
                            const u_char* packet);
 
+  void SetContext(in_addr src, in_addr dest) {
+    context.family = AF_INET;
+    context.addr.ip4.ip_src = src;
+    context.addr.ip4.ip_dst = dest;
+  }
+
+  void SetContext(in6_addr src, in6_addr dest) {
+    context.family = AF_INET6;
+    context.addr.ip6.ip6_src = src;
+    context.addr.ip6.ip6_dst = dest;
+  }
+
+  const PcapCtx_t& GetContext() const { return context; }
+
  private:
   pcap_t* handle = nullptr;
   int32_t linktype;

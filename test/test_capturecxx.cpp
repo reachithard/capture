@@ -12,7 +12,7 @@ TEST(test_capturecxx, ctor) {
   config.snaplen = 100;
   Singleton<CaptureCxx>::Get().Init(&config);
 
-  while (true) {
+  for (int idx = 0; idx < 3; idx++) {
     LOG_DEBUG("start update");
     Singleton<CaptureCxx>::Get().Update(-1);
     sleep(1);

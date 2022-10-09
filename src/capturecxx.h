@@ -21,6 +21,12 @@ class CaptureCxx : public Singleton<CaptureCxx> {
 
   int32_t Shutdown();
 
+  int32_t ProcessTcp(const PcapCtx_t &context, const struct pcap_pkthdr *header,
+                     const u_char *packet);
+
+  int32_t ProcessUdp(const PcapCtx_t &context, const struct pcap_pkthdr *header,
+                     const u_char *packet);
+
  protected:
   void InitDevice();
 

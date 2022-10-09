@@ -10,6 +10,7 @@
 #include <netinet/tcp.h>
 #include <sys/types.h>
 
+#include "capturecxx.h"
 #include "utils/logger.hpp"
 
 namespace Capture {
@@ -45,11 +46,9 @@ void CapProtocol::ProtocolIp(CapHandle *ctx, const struct pcap_pkthdr *header,
   switch (version & 0XF0) {
     case 0X40:
       /* code */
-      LOG_DEBUG("get a ipv4 packet");
       ProtocolIp4(ctx, header, packet);
       break;
     case 0X60:
-      LOG_DEBUG("get a ipv6 packet");
       ProtocolIp6(ctx, header, packet);
       break;
     default:
@@ -83,13 +82,15 @@ void CapProtocol::ProtocolIp4(CapHandle *ctx, const struct pcap_pkthdr *header,
                               const u_char *packet) {
   const struct ip *ip = (struct ip *)packet;
   u_char *payload = (u_char *)packet + sizeof(struct ip);
-
+  ctx->SetContext(ip->ip_src, ip->ip_dst);
   switch (ip->ip_p) {
     case IPPROTO_TCP:
-      LOG_DEBUG("get a tcp");
+      Singleton<CaptureCxx>::Get().ProcessTcp(ctx->GetContext(), header,
+                                              payload);
       break;
     case IPPROTO_UDP:
-      LOG_DEBUG("get a udp");
+      Singleton<CaptureCxx>::Get().ProcessUdp(ctx->GetContext(), header,
+                                              payload);
       break;
     default:
       LOG_INFO("unsupport protocol:{}", ip->ip_p);
@@ -102,12 +103,15 @@ void CapProtocol::ProtocolIp6(CapHandle *ctx, const struct pcap_pkthdr *header,
   const struct ip6_hdr *ip6 = (struct ip6_hdr *)packet;
   u_char *payload = (u_char *)packet + sizeof(struct ip6_hdr);
 
+  ctx->SetContext(ip6->ip6_src, ip6->ip6_dst);
   switch ((ip6->ip6_ctlun).ip6_un1.ip6_un1_nxt) {
     case IPPROTO_TCP:
-      LOG_DEBUG("get a tcp");
+      Singleton<CaptureCxx>::Get().ProcessTcp(ctx->GetContext(), header,
+                                              payload);
       break;
     case IPPROTO_UDP:
-      LOG_DEBUG("get a udp");
+      Singleton<CaptureCxx>::Get().ProcessUdp(ctx->GetContext(), header,
+                                              payload);
       break;
     default:
       LOG_INFO("unsupport protocol:{}", (ip6->ip6_ctlun).ip6_un1.ip6_un1_nxt);

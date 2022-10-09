@@ -90,4 +90,19 @@ void CaptureCxx::InitDevice() {
   }
   return;
 }
+
+int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
+                               const struct pcap_pkthdr *header,
+                               const u_char *packet) {
+  // 进行数据解析 以及ip四元组 到到inode映射， inode到pid pid->process映射
+  LOG_DEBUG("process tcp");
+  return 0;
+}
+
+int32_t CaptureCxx::ProcessUdp(const PcapCtx_t &context,
+                               const struct pcap_pkthdr *header,
+                               const u_char *packet) {
+  LOG_DEBUG("process udp");
+  return 0;
+}
 }  // namespace Capture
