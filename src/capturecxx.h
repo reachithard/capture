@@ -35,6 +35,24 @@ class CaptureCxx : public Singleton<CaptureCxx> {
     return devices;
   }
 
+  bool Contains(const struct in6_addr &n_addr) {
+    for (uint32_t idx = 0; idx < devices.size(); idx++) {
+      if (devices[idx].get()->Contains(n_addr)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool Contains(const in_addr_t &n_addr) {
+    for (uint32_t idx = 0; idx < devices.size(); idx++) {
+      if (devices[idx].get()->Contains(n_addr)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  protected:
   void InitDevice();
 

@@ -37,6 +37,23 @@ class LocalAddr {
     return strV6;
   }
 
+  bool Contains(const struct in6_addr &n_addr) {
+    if (family == AF_INET6) {
+      if (memcmp(&addrV6, &n_addr, sizeof(struct in6_addr)) == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool Contains(const in_addr_t &n_addr) {
+    if ((family == AF_INET) && (n_addr == addrV4)) {
+      return true;
+    }
+
+    return false;
+  }
+
  private:
   in_addr_t addrV4;
   struct in6_addr addrV6;

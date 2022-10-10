@@ -1,6 +1,11 @@
 #ifndef _CAP_DEVICE_H_
 #define _CAP_DEVICE_H_
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -26,6 +31,12 @@ class CapDevice {
     }
     return "";
   }
+
+  bool Contains(const struct in6_addr &n_addr) {
+    return localAddr->Contains(n_addr);
+  }
+
+  bool Contains(const in_addr_t &n_addr) { return localAddr->Contains(n_addr); }
 
  private:
   std::string name;
