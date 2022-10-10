@@ -1,6 +1,7 @@
 #ifndef _CAP_INODE_HELPER_H_
 #define _CAP_INODE_HELPER_H_
 
+#include <set>
 #include <string>
 #include <unordered_map>
 

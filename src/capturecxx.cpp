@@ -129,15 +129,16 @@ int32_t CaptureCxx::UpdatePids() {
 
     std::string name =
         (entry->d_name == nullptr) ? "" : std::string(entry->d_name);
-    if (!std::all_of(name.begin(), name.end(), [](unsigned char c) -> bool {
-          return !std::isdigit(c);
-        })) {
+    LOG_DEBUG("get name:{} {}", name, entry->d_name);
+    if (!std::all_of(name.begin(), name.end(),
+                     [](unsigned char c) -> bool { return std::isdigit(c); })) {
       continue;
     }
 
     pids.insert(std::stol(name));
   }
   closedir(proc);
+  return 0;
 }
 
 int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
