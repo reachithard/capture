@@ -1,5 +1,5 @@
-#ifndef _PROCESS_H_
-#define _PROCESS_H_
+#ifndef _CAP_PROCESS_H_
+#define _CAP_PROCESS_H_
 
 #include <string>
 #include <vector>
@@ -14,13 +14,11 @@ union ParseType {
   uint64_t ioWrite;
 };
 
-class Process {
+class CapProcess {
  public:
-  explicit Process(pid_t ipid) : pid(ipid) {}
+  explicit CapProcess(pid_t ipid) : pid(ipid) {}
 
   int32_t Parse();
-
-  const std::vector<uint32_t>& GetInodes() const { return inodes; }
 
   void Reset() {
     name.clear();
@@ -28,7 +26,6 @@ class Process {
     user.clear();
     pid = -1;
     uid = 0;
-    inodes.clear();  // inode应该不止一个
     memory = 0;
     cpuPercent = 0.0;
     memPercent = 0.0;
@@ -52,7 +49,7 @@ class Process {
 
   int32_t ParseUserAndGroup();
 
-  int32_t ParseNetInfo();
+  int32_t ParseHandle();
 
  private:
   std::string name;
@@ -62,7 +59,6 @@ class Process {
   pid_t pid = -1;
   uid_t uid = 0;
   gid_t gid = 0;
-  std::vector<uint32_t> inodes;
   uint32_t fdCnt = 0;
   uint64_t memory = 0;
   double cpuPercent = 0.0;
@@ -75,4 +71,4 @@ class Process {
 };
 }  // namespace Capture
 
-#endif  // _PROCESS_H_
+#endif  // _CAP_PROCESS_H_

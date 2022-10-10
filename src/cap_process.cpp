@@ -1,4 +1,4 @@
-#include "process.h"
+#include "cap_process.h"
 
 #include <dirent.h>
 #include <grp.h>
@@ -16,9 +16,9 @@
 #include "utils/logger.hpp"
 
 namespace Capture {
-int32_t Process::Parse() { return ParseProc(); }
+int32_t CapProcess::Parse() { return ParseProc(); }
 
-int32_t Process::ParseProc() {
+int32_t CapProcess::ParseProc() {
   if (pid == -1) {
     return CAP_PROCESS_INIT;
   }
@@ -42,13 +42,12 @@ int32_t Process::ParseProc() {
     return ret;
   }
 
-  inodes.clear();
-  ParseNetInfo();
+  ParseHandle();
 
   return ret;
 }
 
-int32_t Process::ParseStatus() {
+int32_t CapProcess::ParseStatus() {
   constexpr uint32_t size = 1024;
   char buffer[size] = {0};
   char filename[256] = {0};
@@ -88,7 +87,7 @@ int32_t Process::ParseStatus() {
   return 0;
 }
 
-int32_t Process::ParseCmdline() {
+int32_t CapProcess::ParseCmdline() {
   char filename[256] = {0};
   int ret = sprintf(filename, "/proc/%d/cmdline", pid);
   if (ret <= 0) {
@@ -106,7 +105,7 @@ int32_t Process::ParseCmdline() {
   return 0;
 }
 
-int32_t Process::ParseIo() {
+int32_t CapProcess::ParseIo() {
   constexpr uint32_t size = 1024;
   char buffer[size] = {0};
   char filename[256] = {0};
@@ -142,7 +141,7 @@ int32_t Process::ParseIo() {
   return 0;
 }
 
-int32_t Process::ParseUserAndGroup() {
+int32_t CapProcess::ParseUserAndGroup() {
   struct passwd *pass;
   struct group *gr;
 
@@ -162,7 +161,7 @@ int32_t Process::ParseUserAndGroup() {
   return 0;
 }
 
-int32_t Process::ParseNetInfo() {
+int32_t CapProcess::ParseHandle() {
   char dirname[128] = {0};
   sprintf(dirname, "/proc/%d/fd", pid);
 
@@ -177,19 +176,6 @@ int32_t Process::ParseNetInfo() {
     if (entry->d_type != DT_LNK) {
       continue;
     }
-
-    std::string fromName = std::string(dirname) + "/" + entry->d_name;
-    constexpr int32_t linklen = 80;
-    char linkname[linklen] = {0};
-    int usedlen = readlink(fromName.c_str(), linkname, linklen - 1);
-    if (usedlen == -1) {
-      continue;
-    }
-    LOG_DEBUG("link:{}", linkname);
-    uint32_t inode = 0;
-    if (sscanf(linkname, "socket:[ %" PRId32 "]", &inode)) {
-      inodes.push_back(inode);
-    }
     cnt++;
   }
   fdCnt = cnt;
@@ -197,18 +183,13 @@ int32_t Process::ParseNetInfo() {
   return 0;
 }
 
-void Process::Info() {
+void CapProcess::Info() {
   std::cout << "name:" << name << " cmdline:" << cmdline << " user:" << user
             << " group:" << group << " pid:" << pid << " uid:" << uid
             << " gid:" << gid << " fdCnt:" << fdCnt << " memory:" << memory
             << " cpuPercent:" << cpuPercent << " memPercent:" << memPercent
             << " ioRead:" << ioRead << " ioWrite:" << ioWrite
             << " recv:" << recv << " send:" << send;
-
-  std::cout << " inodes:";
-  for (uint32_t idx = 0; idx < inodes.size(); idx++) {
-    std::cout << inodes[idx] << ",";
-  }
   std::cout << std::endl;
 }
 }  // namespace Capture

@@ -20,6 +20,13 @@ class CapDevice {
 
   bool UpRunning();
 
+  std::string GetLocalAddr() {
+    if (localAddr) {
+      return localAddr->GetStr();
+    }
+    return "";
+  }
+
  private:
   std::string name;
 

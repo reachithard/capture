@@ -3,13 +3,13 @@
 #include <iostream>
 #include <memory>
 
-#include "process.h"
+#include "cap_process.h"
 #include "utils/logger.hpp"
 
 using namespace Capture;
 
-TEST(test_process, parse) {
-  std::unique_ptr<Process> ptr = std::make_unique<Process>(414673);
+TEST(test_capprocess, parse) {
+  std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(414673);
   int ret = ptr->Parse();
   std::cout << "ret:" << ret << std::endl;
   ptr->Info();

@@ -1,6 +1,9 @@
 #include "capturecxx.h"
 
+#include <dirent.h>
+
 #include "cap_ifaddrs.h"
+#include "cap_inode_helper.h"
 #include "export/capture_errors.h"
 
 namespace Capture {
@@ -48,10 +51,21 @@ int32_t CaptureCxx::Init(const CaptureInitt *config) {
     }
   }
 
+  // 进行初始化
+  UpdatePids();
+  Singleton<CapInodeHelper>::Get().Refresh(pids);
+  for (auto pid : pids) {
+    std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
+    ptr->Parse();
+    processes[pid] = std::move(ptr);
+  }
   return 0;
 }
 
 int32_t CaptureCxx::Update(int32_t cnt) {
+  // 对于映射以及进程数据进行更新 四元组->inode->pid的更新
+  UpdatePids();
+  Singleton<CapInodeHelper>::Get().Refresh(pids);
   int32_t ret = 0;
   for (uint32_t idx = 0; idx < handles.size(); idx++) {
     LOG_DEBUG("start dispatch");
@@ -64,6 +78,14 @@ int32_t CaptureCxx::Update(int32_t cnt) {
       LOG_DEBUG("get zero");
     }
   }
+
+  // 如果进程数据不一致 则说明有进程被杀了 所以没必要再进行监控了 直接删除
+  if (pids.size() != processes.size()) {
+    // 因为两个都按pid排序了 所以找不一样的 然后回收 一般来讲
+    // 删除的都是processes里面的
+  }
+
+  // 进行数据回调 回调到上层 通知数据
   return 0;
 }
 
@@ -91,10 +113,39 @@ void CaptureCxx::InitDevice() {
   return;
 }
 
+int32_t CaptureCxx::UpdatePids() {
+  pids.clear();
+  DIR *proc = opendir("/proc");
+  if (proc == 0) {
+    LOG_ERROR("open dir /proc error");
+    return CAP_OPEN_DIR;
+  }
+  dirent *entry;
+
+  while ((entry = readdir(proc))) {
+    if (entry->d_type != DT_DIR) {
+      continue;
+    }
+
+    std::string name =
+        (entry->d_name == nullptr) ? "" : std::string(entry->d_name);
+    if (!std::all_of(name.begin(), name.end(), [](unsigned char c) -> bool {
+          return !std::isdigit(c);
+        })) {
+      continue;
+    }
+
+    pids.insert(std::stol(name));
+  }
+  closedir(proc);
+}
+
 int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
                                const struct pcap_pkthdr *header,
                                const u_char *packet) {
   // 进行数据解析 以及ip四元组 到到inode映射， inode到pid pid->process映射
+  // 如果pid没有找到 则进行创造
+  // new一个packet对象 然后加入进去
   LOG_DEBUG("process tcp");
   return 0;
 }
