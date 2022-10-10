@@ -1,9 +1,14 @@
 #include "capturecxx.h"
 
 #include <dirent.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 #include "cap_ifaddrs.h"
 #include "cap_inode_helper.h"
+#include "cap_packet.h"
 #include "export/capture_errors.h"
 
 namespace Capture {
@@ -86,6 +91,9 @@ int32_t CaptureCxx::Update(int32_t cnt) {
   }
 
   // 进行数据回调 回调到上层 通知数据
+  for (auto it = processes.begin(); it != processes.end(); it++) {
+    it->second->Info();
+  }
   return 0;
 }
 
@@ -147,7 +155,46 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
   // 进行数据解析 以及ip四元组 到到inode映射， inode到pid pid->process映射
   // 如果pid没有找到 则进行创造
   // new一个packet对象 然后加入进去
+  // TODO 做成对象池
   LOG_DEBUG("process tcp");
+  // 对packet数据进行处理
+  struct tcphdr *tcp = (struct tcphdr *)packet;
+  std::unique_ptr<CapPacket> cap = nullptr;
+  switch (context.family) {
+    case AF_INET:
+      cap = std::make_unique<CapPacket>();
+      cap->Init(context.addr.ip4.ip_src, ntohs(tcp->source),
+                context.addr.ip4.ip_dst, ntohs(tcp->dest), header->len,
+                header->ts);
+      break;
+    case AF_INET6:
+      cap = std::make_unique<CapPacket>();
+      cap->Init(context.addr.ip6.ip6_src, ntohs(tcp->source),
+                context.addr.ip6.ip6_dst, ntohs(tcp->dest), header->len,
+                header->ts);
+      break;
+    default:
+      LOG_ERROR("unknow ip protocol", context.family);
+      return CAP_NET_UNKNOW;
+  }
+
+  pid_t pid = -1;
+  int32_t ret = Singleton<CapInodeHelper>::Get().GetPidByIp(cap->Hash(), pid);
+  if (ret != 0) {
+    return ret;
+  }
+
+  // 查找process 如果找不到则进行删除
+  auto processIt = processes.find(pid);
+  if (processIt == processes.end()) {
+    // 说明是新加入的 进行更新
+    std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
+    ptr->Parse();
+    ptr->AddPacket(cap);
+    processes[pid] = std::move(ptr);
+  } else {
+    processIt->second->AddPacket(cap);
+  }
   return 0;
 }
 

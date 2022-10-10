@@ -1,8 +1,11 @@
 #ifndef _CAP_PROCESS_H_
 #define _CAP_PROCESS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
+
+#include "cap_packet.h"
 
 namespace Capture {
 
@@ -37,6 +40,8 @@ class CapProcess {
   }
 
   void Info();
+
+  void AddPacket(const std::unique_ptr<CapPacket> &ptr);
 
  protected:
   int32_t ParseProc();

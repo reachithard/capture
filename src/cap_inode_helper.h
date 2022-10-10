@@ -12,12 +12,14 @@ class CapInodeHelper : public Singleton<CapInodeHelper> {
  public:
   int32_t Refresh(const std::set<pid_t>& pids);
 
+  pid_t GetPidByIp(const std::string& hash, pid_t& pid);
+
  protected:
   int32_t RefreshToInodes();
 
   int32_t Parse(const std::string& file);
 
-  int32_t ParseBuffer(const char* buffer, uint32_t size);
+  void ParseBuffer(const char* buffer, uint32_t size);
 
   int32_t RefreshToPids(const std::set<pid_t>& pids);
 

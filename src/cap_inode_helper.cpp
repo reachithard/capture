@@ -28,7 +28,27 @@ int32_t CapInodeHelper::Refresh(const std::set<pid_t> &pids) {
   }
 
   ret = RefreshToPids(pids);
+  for (auto it = netToInodes.begin(); it != netToInodes.end(); it++) {
+    LOG_DEBUG("get ip:{} inodes:{}", it->first, it->second);
+  }
   return ret;
+}
+
+int32_t CapInodeHelper::GetPidByIp(const std::string &hash, pid_t &pid) {
+  auto inodeIt = netToInodes.find(hash);
+  if (inodeIt == netToInodes.end()) {
+    LOG_ERROR("can't find ip:{} to inodes", hash);
+    return CAP_FIND_IP;
+  }
+
+  auto pidIt = inodeToPids.find(inodeIt->second);
+  if (pidIt == inodeToPids.end()) {
+    LOG_ERROR("can't find inode:{} to pid", inodeIt->second);
+    return CAP_FIND_INODE;
+  }
+  pid = pidIt->second;
+  LOG_DEBUG("find pid:{}", pid);
+  return 0;
 }
 
 int32_t CapInodeHelper::RefreshToInodes() {
@@ -73,16 +93,14 @@ int32_t CapInodeHelper::Parse(const std::string &file) {
         continue;
       }
       LOG_DEBUG("get buffer:{}", buffer);
-      ret = ParseBuffer(buffer, size);
-      if (ret != 0) {
-        return ret;
-      }
+      ParseBuffer(buffer, size);
     }
   }
   return ret;
 }
 
-int32_t CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
+void CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
+  LOG_DEBUG("parse buffer:{}", buffer);
   short int family;
   struct in6_addr localRet = {};
   struct in6_addr remoteRet = {};
@@ -103,12 +121,12 @@ int32_t CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
 
   if (matches != 5) {
     LOG_ERROR("can't match format");
-    return CAP_NET_UNMATCH;
+    return;
   }
 
   if (inode == 0) {
     LOG_INFO("get inode 0 and return");
-    return 0;
+    return;
   }
 
   if (strlen(locAddr) > 8) {
@@ -152,10 +170,9 @@ int32_t CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
            devices.begin();
        it != devices.end(); it++) {
     hash = it->get()->GetLocalAddr() + ":" + std::to_string(locPort) + "-" +
-           std::string(remote) + std::to_string(remPort);
+           std::string(remote) + ":" + std::to_string(remPort);
     netToInodes[hash] = inode;
   }
-  return 0;
 }
 
 int32_t CapInodeHelper::RefreshToPids(const std::set<pid_t> &pids) {

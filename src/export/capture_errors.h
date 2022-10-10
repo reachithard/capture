@@ -15,4 +15,7 @@
 #define CAP_PROCESS_OPEN_DIR 38
 
 #define CAP_NET_UNMATCH 41
+#define CAP_NET_UNKNOW 41
+#define CAP_FIND_IP 43
+#define CAP_FIND_INODE 44
 #endif  // _CAPTURE_ERRORS_H_

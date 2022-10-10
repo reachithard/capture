@@ -192,4 +192,12 @@ void CapProcess::Info() {
             << " recv:" << recv << " send:" << send;
   std::cout << std::endl;
 }
+
+void CapProcess::AddPacket(const std::unique_ptr<CapPacket> &ptr) {
+  if (ptr->IsOutgoing()) {
+    send += ptr->GetLen();
+  } else {
+    recv += ptr->GetLen();
+  }
+}
 }  // namespace Capture
