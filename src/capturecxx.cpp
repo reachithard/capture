@@ -338,6 +338,87 @@ int32_t CaptureCxx::ProcessUdp(const PcapCtx_t &context,
                                const struct pcap_pkthdr *header,
                                const u_char *packet) {
   LOG_DEBUG("process udp");
+  // 进行数据解析 以及ip四元组 到到inode映射， inode到pid pid->process映射
+  // 如果pid没有找到 则进行创造
+  // new一个packet对象 然后加入进去
+  // TODO 做成对象池
+  // 对packet数据进行处理
+  struct udphdr *udp = (struct udphdr *)packet;
+  std::unique_ptr<CapPacket> cap = nullptr;
+  switch (context.family) {
+    case AF_INET:
+      cap = std::make_unique<CapPacket>();
+      cap->Init(context.addr.ip4.ip_src, ntohs(udp->source),
+                context.addr.ip4.ip_dst, ntohs(udp->dest), header->len,
+                header->ts);
+      break;
+    case AF_INET6:
+      cap = std::make_unique<CapPacket>();
+      cap->Init(context.addr.ip6.ip6_src, ntohs(udp->source),
+                context.addr.ip6.ip6_dst, ntohs(udp->dest), header->len,
+                header->ts);
+      break;
+    default:
+      LOG_ERROR("unknow ip protocol", context.family);
+      return CAP_NET_UNKNOW;
+  }
+
+  pid_t pid = -1;
+  int32_t ret = Singleton<CapInodeHelper>::Get().GetPidByIp(cap->Hash(), pid);
+  if (ret != 0) {
+    return ret;
+  }
+
+  // 查找process 如果找不到则进行加入
+  // 将packet加入链接里面
+  auto processIt = processes.find(pid);
+  if (processIt == processes.end()) {
+    // 说明是新加入的 进行更新
+    std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
+    ptr->Parse();
+    ptr->AddPacket(cap);
+    processes[pid] = std::move(ptr);
+  } else {
+    processIt->second->AddPacket(cap);
+  }
+
+  if (packetCallback != nullptr) {
+    if (packetIdx < packetData.size()) {
+      if (packetData[packetIdx].packet != nullptr) {
+        free(packetData[packetIdx].packet);
+      }
+      memset(packetData.data() + packetIdx, 0, sizeof(Packet_t));
+
+      packetData[packetIdx].family = P_TCP;
+      strncpy(packetData[packetIdx].hash, cap->Hash().c_str(),
+              CAPTURE_COMMAN_SIZE - 1);
+      packetData[packetIdx].packetSize = header->len;
+      if (captureAll) {
+        // 进行包的复制
+        u_char *bag = (u_char *)malloc(header->len);
+        memcpy(bag, packet, header->len);
+        packetData[packetIdx].packet = bag;
+      }
+      packetIdx++;
+    } else {
+      Packet_t temp;
+      memset(&temp, 0, sizeof(Packet_t));
+
+      temp.family = P_UDP;
+      strncpy(temp.hash, cap->Hash().c_str(), CAPTURE_COMMAN_SIZE - 1);
+      temp.packetSize = header->len;
+      if (captureAll) {
+        // 进行包的复制
+        u_char *bag = (u_char *)malloc(header->len);
+        memcpy(bag, packet, header->len);
+        temp.packet = bag;
+      }
+
+      packetData.push_back(temp);
+      packetIdx++;
+    }
+  }
+
   return 0;
 }
 }  // namespace Capture
