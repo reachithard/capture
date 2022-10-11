@@ -18,6 +18,7 @@ int32_t CaptureCxx::Init(const CaptureInitt *config,
   processCallback = ipcocessCallback;
   packetCallback = ipcaketCallback;
   Singleton<Logger>::Get().Init(config->logfile);
+  Singleton<Logger>::Get().SetLevel(spdlog::level::err);
   LOG_DEBUG("init capture begin");
   InitDevice();
   if (devices.empty()) {
@@ -100,6 +101,13 @@ int32_t CaptureCxx::Update(int32_t cnt, bool icaptureAll /* = falase*/) {
     for (; pidIt != pids.end() && processesIt != processes.end();) {
       if (*pidIt != processesIt->first) {
         // processes 删除
+        if (processCallback != nullptr) {
+          Process_t data;
+          memset(&data, 0, sizeof(Process_t));
+          uint32_t size = 1;
+          data.pid = processesIt->first;
+          processCallback(ACTION_REMOVE, &data, &size);
+        }
         processesIt = processes.erase(processesIt);
       } else {
         pidIt++;

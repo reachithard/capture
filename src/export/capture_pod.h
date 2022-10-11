@@ -2,6 +2,7 @@
 #define _CAPTURE_POD_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 
 extern "C" {
 

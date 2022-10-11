@@ -31,6 +31,7 @@ set(CAPTURE_VERSION_STRING "${CAPTURE_VERSION}")
 
 
 add_subdirectory(src)
+add_subdirectory(examples)
 
 include(CTest)
 enable_testing()

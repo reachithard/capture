@@ -1,4 +1,4 @@
-#include "libcapture.h"
+#include "export/libcapture.h"
 
 #include "capturecxx.h"
 
@@ -6,7 +6,8 @@ int32_t CaptureInit(const CaptureInitt *config,
                     ProcessInfoCallback processCallback,
                     PacketCallback packetCallback) {
   using namespace Capture;
-  return Singleton<CaptureCxx>::Get().Init(config);
+  return Singleton<CaptureCxx>::Get().Init(config, processCallback,
+                                           packetCallback);
 }
 
 /*

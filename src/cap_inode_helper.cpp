@@ -120,7 +120,7 @@ void CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
                        locAddr, &locPort, remAddr, &remPort, &inode);
 
   if (matches != 5) {
-    LOG_ERROR("can't match format");
+    LOG_ERROR("can't match format{}", buffer);
     return;
   }
 

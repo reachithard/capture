@@ -27,7 +27,8 @@ ADD_LIBRARY(intf INTERFACE)
 
 TARGET_INCLUDE_DIRECTORIES(intf INTERFACE 
                                 ${BASE_DIR}/src
-								${BASE_DIR}/src/utils)
+								${BASE_DIR}/src/utils
+								${BASE_DIR}/src/export)
 
 TARGET_COMPILE_OPTIONS(intf INTERFACE 
 						-Wall

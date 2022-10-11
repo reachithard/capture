@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 #include "capturecxx.h"
 #include "utils/logger.hpp"
@@ -12,9 +13,9 @@ TEST(test_capturecxx, ctor) {
   config.snaplen = 100;
   Singleton<CaptureCxx>::Get().Init(&config);
 
-  for (int idx = 0; idx < 3; idx++) {
+  for (int idx = 0; idx < 100; idx++) {
     LOG_DEBUG("start update");
     Singleton<CaptureCxx>::Get().Update(-1);
-    sleep(1);
+    sleep(3);
   }
 }
