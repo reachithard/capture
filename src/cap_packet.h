@@ -37,6 +37,8 @@ class CapPacket {
 
   const std::string &Hash();
 
+  const std::string Link();
+
   uint32_t GetLen() const { return len; }
 
  private:

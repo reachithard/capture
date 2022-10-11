@@ -302,7 +302,7 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
       memset(packetData.data() + packetIdx, 0, sizeof(Packet_t));
 
       packetData[packetIdx].family = P_TCP;
-      strncpy(packetData[packetIdx].hash, cap->Hash().c_str(),
+      strncpy(packetData[packetIdx].hash, cap->Link().c_str(),
               CAPTURE_COMMAN_SIZE - 1);
       packetData[packetIdx].packetSize = header->len;
       if (captureAll) {
@@ -317,7 +317,7 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
       memset(&temp, 0, sizeof(Packet_t));
 
       temp.family = P_TCP;
-      strncpy(temp.hash, cap->Hash().c_str(), CAPTURE_COMMAN_SIZE - 1);
+      strncpy(temp.hash, cap->Link().c_str(), CAPTURE_COMMAN_SIZE - 1);
       temp.packetSize = header->len;
       if (captureAll) {
         // 进行包的复制
@@ -390,7 +390,7 @@ int32_t CaptureCxx::ProcessUdp(const PcapCtx_t &context,
       memset(packetData.data() + packetIdx, 0, sizeof(Packet_t));
 
       packetData[packetIdx].family = P_TCP;
-      strncpy(packetData[packetIdx].hash, cap->Hash().c_str(),
+      strncpy(packetData[packetIdx].hash, cap->Link().c_str(),
               CAPTURE_COMMAN_SIZE - 1);
       packetData[packetIdx].packetSize = header->len;
       if (captureAll) {
@@ -405,7 +405,7 @@ int32_t CaptureCxx::ProcessUdp(const PcapCtx_t &context,
       memset(&temp, 0, sizeof(Packet_t));
 
       temp.family = P_UDP;
-      strncpy(temp.hash, cap->Hash().c_str(), CAPTURE_COMMAN_SIZE - 1);
+      strncpy(temp.hash, cap->Link().c_str(), CAPTURE_COMMAN_SIZE - 1);
       temp.packetSize = header->len;
       if (captureAll) {
         // 进行包的复制

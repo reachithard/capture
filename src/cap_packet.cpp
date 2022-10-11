@@ -92,10 +92,31 @@ const std::string &CapPacket::Hash() {
   if (IsOutgoing()) {
     hashstring = std::string(local) + ":" + std::to_string(sport) + "-" +
                  std::string(remote) + ":" + std::to_string(dport);
+    LOG_ERROR("outgoing packet:{}", hashstring);
   } else {
     hashstring = std::string(remote) + ":" + std::to_string(dport) + "-" +
                  std::string(local) + ":" + std::to_string(sport);
+    LOG_ERROR("incoming packet:{}", hashstring);
   }
   return hashstring;
+}
+
+const std::string CapPacket::Link() {
+  std::string linkName;
+  char local[50] = {0};
+  char remote[50] = {0};
+  if (family == AF_INET) {
+    inet_ntop(family, &sip, local, 49);
+    inet_ntop(family, &dip, remote, 49);
+  } else {
+    inet_ntop(family, &sip6, local, 49);
+    inet_ntop(family, &dip6, remote, 49);
+  }
+
+  linkName = std::string(local) + ":" + std::to_string(sport) + "-" +
+             std::string(remote) + ":" + std::to_string(dport);
+  LOG_ERROR("linkName going in packet:{}", linkName);
+
+  return linkName;
 }
 }  // namespace Capture
