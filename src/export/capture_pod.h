@@ -2,6 +2,12 @@
 #define _CAPTURE_POD_H_
 extern "C" {
 
+#define CAPTURE_DSO_VISIBLE __attribute__((visibility("default")))
+#define CAPTURE_DSO_HIDDEN __attribute__((visibility("hidden")))
+
+#define CAPTURE_COMMAN_SIZE 128
+#define CAPTURE_CMDLINE_SIZE 512
+
 enum LoopType {
   SELECT,
   EPOLL,
@@ -17,6 +23,30 @@ typedef struct CaptureInits {
   char* errorbuf;
   LoopType loop;
 } CaptureInitt;
+
+typedef struct Process_s {
+  char name[CAPTURE_COMMAN_SIZE];
+  char cmdline[CAPTURE_CMDLINE_SIZE];
+  char user[CAPTURE_COMMAN_SIZE];
+  char group[CAPTURE_COMMAN_SIZE];
+  pid_t pid;
+  uid_t uid;
+  gid_t gid;
+  uint32_t fdCnt;
+  uint64_t memory;
+  double cpuPercent;
+  double memPercent;
+
+  uint64_t ioRead;
+  uint64_t ioWrite;
+  uint64_t recv;
+  uint64_t send;
+} Process_t;
+
+enum CaptureAction { ACTION_UPDATE, ACTION_REMOVE };
+
+typedef void (*ProcessInfoCallback)(CaptureAction action, const Process_t* data,
+                                    uint32_t* size);
 }
 
 #endif  // _CAPTURE_POD_H_
