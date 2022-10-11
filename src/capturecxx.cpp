@@ -12,7 +12,11 @@
 #include "export/capture_errors.h"
 
 namespace Capture {
-int32_t CaptureCxx::Init(const CaptureInitt *config) {
+int32_t CaptureCxx::Init(const CaptureInitt *config,
+                         ProcessInfoCallback ipcocessCallback /*= nullptr*/,
+                         PacketCallback ipcaketCallback /*= nullptr*/) {
+  processCallback = ipcocessCallback;
+  packetCallback = ipcaketCallback;
   Singleton<Logger>::Get().Init(config->logfile);
   LOG_DEBUG("init capture begin");
   InitDevice();
@@ -67,8 +71,9 @@ int32_t CaptureCxx::Init(const CaptureInitt *config) {
   return 0;
 }
 
-int32_t CaptureCxx::Update(int32_t cnt) {
+int32_t CaptureCxx::Update(int32_t cnt, bool icaptureAll /* = falase*/) {
   // 对于映射以及进程数据进行更新 四元组->inode->pid的更新
+  packetIdx = 0;
   UpdatePids();
   Singleton<CapInodeHelper>::Get().Refresh(pids);
   int32_t ret = 0;
@@ -87,13 +92,97 @@ int32_t CaptureCxx::Update(int32_t cnt) {
   // 如果进程数据不一致 则说明有进程被杀了 所以没必要再进行监控了 直接删除
   if (pids.size() != processes.size()) {
     // 因为两个都按pid排序了 所以找不一样的 然后回收 一般来讲
-    // 删除的都是processes里面的
+    // 删除的都是processes里面的 直接触发一下删除回调 即回调行为为remove
+    auto pidIt = pids.begin();
+    auto processesIt = processes.begin();
+
+    // 使用迭代器删除 注意迭代器失效问题
+    for (; pidIt != pids.end() && processesIt != processes.end();) {
+      if (*pidIt != processesIt->first) {
+        // processes 删除
+        processesIt = processes.erase(processesIt);
+      } else {
+        pidIt++;
+        processesIt++;
+      }
+    }
   }
 
-  // 进行数据回调 回调到上层 通知数据
-  for (auto it = processes.begin(); it != processes.end(); it++) {
-    it->second->Info();
+  if (processCallback != nullptr) {
+    // 进行数据回调 回调到上层 通知数据
+    // 如果为了内存 可以保留 只改变里面的内容值 就不用频繁的clear了
+
+    // 说明少了 要进行插入新的
+    uint32_t idx = 0;
+    auto it = processes.begin();
+    for (; it != processes.end() && idx < processData.size(); it++, idx++) {
+      // 数据的赋值
+      memset(processData.data() + idx, 0, sizeof(Process_t));
+
+      strncpy(processData[idx].name, it->second->GetName().c_str(),
+              CAPTURE_COMMAN_SIZE - 1);
+      strncpy(processData[idx].cmdline, it->second->GetCmdline().c_str(),
+              CAPTURE_CMDLINE_SIZE - 1);
+      strncpy(processData[idx].user, it->second->GetUser().c_str(),
+              CAPTURE_COMMAN_SIZE - 1);
+      strncpy(processData[idx].group, it->second->GetGroup().c_str(),
+              CAPTURE_COMMAN_SIZE - 1);
+
+      processData[idx].pid = it->second->GetPid();
+      processData[idx].uid = it->second->GetUid();
+      processData[idx].gid = it->second->GetGid();
+      processData[idx].fdCnt = it->second->GetFdCnt();
+
+      processData[idx].memory = it->second->GetMemory();
+      processData[idx].cpuPercent = it->second->GetCpuPercent();
+      processData[idx].memPercent = it->second->GetMemPercent();
+      processData[idx].ioRead = it->second->GetIoRead();
+
+      processData[idx].ioWrite = it->second->GetIoWrite();
+      processData[idx].recv = it->second->GetRecv();
+      processData[idx].send = it->second->GetSend();
+    }
+    if (processData.size() < processes.size()) {
+      for (; it != processes.end(); it++) {
+        Process_t data;
+        memset(&data, 0, sizeof(Process_t));
+
+        // 数据的赋值
+        strncpy(data.name, it->second->GetName().c_str(),
+                CAPTURE_COMMAN_SIZE - 1);
+        strncpy(data.cmdline, it->second->GetCmdline().c_str(),
+                CAPTURE_CMDLINE_SIZE - 1);
+        strncpy(data.user, it->second->GetUser().c_str(),
+                CAPTURE_COMMAN_SIZE - 1);
+        strncpy(data.group, it->second->GetGroup().c_str(),
+                CAPTURE_COMMAN_SIZE - 1);
+
+        data.pid = it->second->GetPid();
+        data.uid = it->second->GetUid();
+        data.gid = it->second->GetGid();
+        data.fdCnt = it->second->GetFdCnt();
+
+        data.memory = it->second->GetMemory();
+        data.cpuPercent = it->second->GetCpuPercent();
+        data.memPercent = it->second->GetMemPercent();
+        data.ioRead = it->second->GetIoRead();
+
+        data.ioWrite = it->second->GetIoWrite();
+        data.recv = it->second->GetRecv();
+        data.send = it->second->GetSend();
+        processData.push_back(data);
+      }
+    }
+
+    uint32_t size = processes.size();
+    processCallback(ACTION_UPDATE, processData.data(), &size);
   }
+
+  if (packetCallback != nullptr && ret > 0 && !packetData.empty()) {
+    uint32_t size = ret;
+    packetCallback(packetData.data(), &size);
+  }
+
   return 0;
 }
 
@@ -184,7 +273,8 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
     return ret;
   }
 
-  // 查找process 如果找不到则进行删除
+  // 查找process 如果找不到则进行加入
+  // 将packet加入链接里面
   auto processIt = processes.find(pid);
   if (processIt == processes.end()) {
     // 说明是新加入的 进行更新
@@ -195,6 +285,44 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
   } else {
     processIt->second->AddPacket(cap);
   }
+
+  if (packetCallback != nullptr) {
+    if (packetIdx < packetData.size()) {
+      if (packetData[packetIdx].packet != nullptr) {
+        free(packetData[packetIdx].packet);
+      }
+      memset(packetData.data() + packetIdx, 0, sizeof(Packet_t));
+
+      packetData[packetIdx].family = P_TCP;
+      strncpy(packetData[packetIdx].hash, cap->Hash().c_str(),
+              CAPTURE_COMMAN_SIZE - 1);
+      packetData[packetIdx].packetSize = header->len;
+      if (captureAll) {
+        // 进行包的复制
+        u_char *bag = (u_char *)malloc(header->len);
+        memcpy(bag, packet, header->len);
+        packetData[packetIdx].packet = bag;
+      }
+      packetIdx++;
+    } else {
+      Packet_t temp;
+      memset(&temp, 0, sizeof(Packet_t));
+
+      temp.family = P_TCP;
+      strncpy(temp.hash, cap->Hash().c_str(), CAPTURE_COMMAN_SIZE - 1);
+      temp.packetSize = header->len;
+      if (captureAll) {
+        // 进行包的复制
+        u_char *bag = (u_char *)malloc(header->len);
+        memcpy(bag, packet, header->len);
+        temp.packet = bag;
+      }
+
+      packetData.push_back(temp);
+      packetIdx++;
+    }
+  }
+
   return 0;
 }
 

@@ -43,6 +43,30 @@ class CapProcess {
 
   void AddPacket(const std::unique_ptr<CapPacket> &ptr);
 
+  const std::string &GetName() const { return name; }
+
+  const std::string &GetCmdline() const { return cmdline; }
+
+  const std::string &GetUser() const { return user; }
+
+  const std::string &GetGroup() const { return group; }
+
+  pid_t GetPid() const { return pid; }
+
+  uid_t GetUid() const { return uid; }
+
+  gid_t GetGid() const { return gid; }
+
+  uint32_t GetFdCnt() const { return fdCnt; }
+  uint64_t GetMemory() const { return memory; }
+  double GetCpuPercent() const { return cpuPercent; }
+  double GetMemPercent() const { return memPercent; }
+
+  uint64_t GetIoRead() const { return ioRead; }
+  uint64_t GetIoWrite() const { return ioWrite; }
+  uint64_t GetRecv() const { return recv; }
+  uint64_t GetSend() const { return send; }
+
  protected:
   int32_t ParseProc();
 

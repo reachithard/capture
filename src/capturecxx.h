@@ -2,6 +2,7 @@
 #define _CAPTURECXX_H_
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -18,10 +19,12 @@
 namespace Capture {
 class CaptureCxx : public Singleton<CaptureCxx> {
  public:
-  int32_t Init(const CaptureInitt *config);
+  int32_t Init(const CaptureInitt *config,
+               ProcessInfoCallback ipcocessCallback = nullptr,
+               PacketCallback ipcaketCallback = nullptr);
 
   // -1表示无限捕获
-  int32_t Update(int32_t cnt = -1);
+  int32_t Update(int32_t cnt = -1, bool icaptureAll = false);
 
   int32_t Shutdown();
 
@@ -64,6 +67,16 @@ class CaptureCxx : public Singleton<CaptureCxx> {
   std::unique_ptr<CapProtocol> protocol;
   std::set<pid_t> pids;
   std::map<pid_t, std::unique_ptr<CapProcess>> processes;
+  std::function<void(CaptureAction action, const Process_t *processes,
+                     uint32_t *size)>
+      processCallback;
+
+  std::function<void(const Packet_t *packets, uint32_t *size)> packetCallback;
+
+  std::vector<Process_t> processData;
+  std::vector<Packet_t> packetData;
+  uint64_t packetIdx = 0;
+  bool captureAll = false;
 };
 }  // namespace Capture
 #endif  // _CAPTURECXX_H_
