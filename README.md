@@ -1,6 +1,4 @@
 # capture
-```c++
-
 ## 依赖
 * libpcap 网络嗅探需要使用，BPF原理
 * flex libpcap依赖flex
