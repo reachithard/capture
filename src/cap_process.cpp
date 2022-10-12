@@ -16,9 +16,11 @@
 #include "utils/logger.hpp"
 
 namespace Capture {
-int32_t CapProcess::Parse() { return ParseProc(); }
+int32_t CapProcess::Parse(uint64_t imemory, uint64_t ideltacpu) {
+  return ParseProc(imemory, ideltacpu);
+}
 
-int32_t CapProcess::ParseProc() {
+int32_t CapProcess::ParseProc(uint64_t imemory, uint64_t ideltacpu) {
   if (pid == -1) {
     return CAP_PROCESS_INIT;
   }
@@ -43,6 +45,20 @@ int32_t CapProcess::ParseProc() {
   }
 
   ParseHandle();
+
+  // cpupercent 计算
+  memPercent = (imemory == 0 ? 0
+                             : static_cast<double>(memory * 100) /
+                                   static_cast<double>(imemory));
+
+  ret = ParseStat();
+  if (ret != 0) {
+    return ret;
+  }
+
+  cpuPercent = (ideltacpu == 0 ? 0
+                               : static_cast<double>(deltaCpu * 100) /
+                                     static_cast<double>(ideltacpu));
 
   return ret;
 }
@@ -180,6 +196,45 @@ int32_t CapProcess::ParseHandle() {
   }
   fdCnt = cnt;
   closedir(dir);
+  return 0;
+}
+
+int32_t CapProcess::ParseStat() {
+  constexpr uint32_t size = 1024;
+  char buffer[size] = {0};
+  char filename[256] = {0};
+  int ret = sprintf(filename, "/proc/%d/stat", pid);
+  if (ret <= 0) {
+    LOG_DEBUG("format error:{}", pid);
+    return CAP_PROCESS_FORMAT;
+  }
+  std::fstream s(filename, s.in);
+  if (!s.is_open()) {
+    LOG_DEBUG("open file error:{}", filename);
+    return CAP_PROCESS_OPEN;
+  } else {
+    // parse
+    while (!s.eof()) {
+      /* code */
+      s.getline(buffer, size);
+      if (strcmp(buffer, "") == 0) {
+        continue;
+      }
+
+      uint64_t utime = 0;
+      uint64_t stime = 0;
+      uint64_t now = 0;
+      if (sscanf(buffer,
+                 "%*d %*s %*s %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
+                 "%" PRId64 " %" PRId64 " %*d %*d %*d %*d %*d %*d %*d %*d %*d "
+                 "%*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d %*d",
+                 &utime, &stime)) {
+        now = utime + stime;
+        deltaCpu = now - cpu;
+        cpu = now;
+      }
+    }
+  }
   return 0;
 }
 

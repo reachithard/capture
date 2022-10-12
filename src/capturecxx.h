@@ -61,6 +61,10 @@ class CaptureCxx : public Singleton<CaptureCxx> {
 
   int32_t UpdatePids();
 
+  int32_t GetCpuTotal();
+
+  int32_t GetMemTotal();
+
  private:
   std::vector<std::unique_ptr<CapDevice>> devices;
   std::vector<std::unique_ptr<CapHandle>> handles;
@@ -77,6 +81,10 @@ class CaptureCxx : public Singleton<CaptureCxx> {
   std::vector<Packet_t> packetData;
   uint64_t packetIdx = 0;
   bool captureAll = false;
+
+  uint64_t memory = 0;
+  uint64_t cpu = 0;
+  uint64_t deltaCpu = 0;
 };
 }  // namespace Capture
 #endif  // _CAPTURECXX_H_

@@ -37,7 +37,7 @@ int32_t CapInodeHelper::Refresh(const std::set<pid_t> &pids) {
 int32_t CapInodeHelper::GetPidByIp(const std::string &hash, pid_t &pid) {
   auto inodeIt = netToInodes.find(hash);
   if (inodeIt == netToInodes.end()) {
-    LOG_ERROR("can't find ip:{} to inodes", hash);
+    LOG_DEBUG("can't find ip:{} to inodes", hash);
     return CAP_FIND_IP;
   }
 
@@ -120,7 +120,7 @@ void CapInodeHelper::ParseBuffer(const char *buffer, uint32_t size) {
                        locAddr, &locPort, remAddr, &remPort, &inode);
 
   if (matches != 5) {
-    LOG_ERROR("can't match format{}", buffer);
+    LOG_DEBUG("can't match format{}", buffer);
     return;
   }
 

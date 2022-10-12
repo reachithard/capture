@@ -92,11 +92,11 @@ const std::string &CapPacket::Hash() {
   if (IsOutgoing()) {
     hashstring = std::string(local) + ":" + std::to_string(sport) + "-" +
                  std::string(remote) + ":" + std::to_string(dport);
-    LOG_ERROR("outgoing packet:{}", hashstring);
+    LOG_DEBUG("outgoing packet:{}", hashstring);
   } else {
     hashstring = std::string(remote) + ":" + std::to_string(dport) + "-" +
                  std::string(local) + ":" + std::to_string(sport);
-    LOG_ERROR("incoming packet:{}", hashstring);
+    LOG_DEBUG("incoming packet:{}", hashstring);
   }
   return hashstring;
 }
@@ -115,7 +115,7 @@ const std::string CapPacket::Link() {
 
   linkName = std::string(local) + ":" + std::to_string(sport) + "-" +
              std::string(remote) + ":" + std::to_string(dport);
-  LOG_ERROR("linkName going in packet:{}", linkName);
+  LOG_DEBUG("linkName going in packet:{}", linkName);
 
   return linkName;
 }

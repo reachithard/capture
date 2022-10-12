@@ -10,7 +10,7 @@ using namespace Capture;
 
 TEST(test_capprocess, parse) {
   std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(414673);
-  int ret = ptr->Parse();
+  int ret = ptr->Parse(0, 0);
   std::cout << "ret:" << ret << std::endl;
   ptr->Info();
 }

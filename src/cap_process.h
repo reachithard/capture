@@ -21,7 +21,7 @@ class CapProcess {
  public:
   explicit CapProcess(pid_t ipid) : pid(ipid) {}
 
-  int32_t Parse();
+  int32_t Parse(uint64_t imemory, uint64_t ideltacpu);
 
   void Reset() {
     name.clear();
@@ -68,7 +68,7 @@ class CapProcess {
   uint64_t GetSend() const { return send; }
 
  protected:
-  int32_t ParseProc();
+  int32_t ParseProc(uint64_t imemory, uint64_t ideltacpu);
 
   int32_t ParseStatus();
 
@@ -79,6 +79,8 @@ class CapProcess {
   int32_t ParseUserAndGroup();
 
   int32_t ParseHandle();
+
+  int32_t ParseStat();
 
  private:
   std::string name;
@@ -97,6 +99,9 @@ class CapProcess {
   uint64_t ioWrite = 0;
   uint64_t recv = 0;
   uint64_t send = 0;
+
+  uint64_t cpu = 0;
+  uint64_t deltaCpu = 0;
 };
 }  // namespace Capture
 

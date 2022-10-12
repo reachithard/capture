@@ -6,6 +6,8 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
+#include <fstream>
+
 #include "cap_ifaddrs.h"
 #include "cap_inode_helper.h"
 #include "cap_packet.h"
@@ -21,6 +23,7 @@ int32_t CaptureCxx::Init(const CaptureInitt *config,
   Singleton<Logger>::Get().SetLevel(spdlog::level::err);
   LOG_DEBUG("init capture begin");
   InitDevice();
+  GetMemTotal();
   if (devices.empty()) {
     return CAP_DEVICE_INIT;
   }
@@ -66,7 +69,7 @@ int32_t CaptureCxx::Init(const CaptureInitt *config,
   Singleton<CapInodeHelper>::Get().Refresh(pids);
   for (auto pid : pids) {
     std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
-    ptr->Parse();
+    ptr->Parse(memory, deltaCpu);
     processes[pid] = std::move(ptr);
   }
   return 0;
@@ -91,6 +94,11 @@ int32_t CaptureCxx::Update(int32_t cnt, bool icaptureAll /* = falase*/) {
   }
 
   // 如果进程数据不一致 则说明有进程被杀了 所以没必要再进行监控了 直接删除
+  int tmp = GetCpuTotal();
+  if (tmp != 0) {
+    return tmp;
+  }
+
   if (pids.size() != processes.size()) {
     // 因为两个都按pid排序了 所以找不一样的 然后回收 一般来讲
     // 删除的都是processes里面的 直接触发一下删除回调 即回调行为为remove
@@ -110,6 +118,7 @@ int32_t CaptureCxx::Update(int32_t cnt, bool icaptureAll /* = falase*/) {
         }
         processesIt = processes.erase(processesIt);
       } else {
+        processesIt->second->Parse(memory, deltaCpu);
         pidIt++;
         processesIt++;
       }
@@ -246,6 +255,71 @@ int32_t CaptureCxx::UpdatePids() {
   return 0;
 }
 
+int32_t CaptureCxx::GetCpuTotal() {
+  constexpr uint32_t size = 1024;
+  char buffer[size] = {0};
+  std::fstream s("/proc/stat", s.in);
+  if (!s.is_open()) {
+    LOG_DEBUG("open file error:/proc/stat");
+    return CAP_PROCESS_OPEN;
+  } else {
+    // parse
+    while (!s.eof()) {
+      /* code */
+      s.getline(buffer, size);
+      if (strcmp(buffer, "") == 0) {
+        continue;
+      }
+      LOG_DEBUG("get buffer:{}", buffer);
+
+      uint64_t utime = 0;
+      uint64_t ntime = 0;
+      uint64_t stime = 0;
+      uint64_t itime = 0;
+      uint64_t iowtime = 0;
+      uint64_t irqtime = 0;
+      uint64_t sirqtime = 0;
+      uint64_t now = 0;
+
+      if (sscanf(buffer, "cpu  %lu %lu %lu %lu %lu %lu %lu", &utime, &ntime,
+                 &stime, &itime, &iowtime, &irqtime, &sirqtime)) {
+        now = utime + ntime + stime + itime + iowtime + irqtime + sirqtime;
+        deltaCpu = now - cpu;
+        cpu = now;
+        break;
+      }
+    }
+  }
+  return 0;
+}
+
+int32_t CaptureCxx::GetMemTotal() {
+  constexpr uint32_t size = 1024;
+  char buffer[size] = {0};
+  std::fstream s("/proc/meminfo", s.in);
+  if (!s.is_open()) {
+    LOG_DEBUG("open file error:/proc/meminfo");
+    return CAP_PROCESS_OPEN;
+  } else {
+    // parse
+    while (!s.eof()) {
+      /* code */
+      s.getline(buffer, size);
+      if (strcmp(buffer, "") == 0) {
+        continue;
+      }
+      LOG_DEBUG("get buffer:{}", buffer);
+      uint64_t tmpMem = 0;
+      if (sscanf(buffer, "MemTotal:        %" PRId64 " kB", &tmpMem)) {
+        LOG_INFO("init memory:{} buffer:{}", tmpMem, buffer);
+        memory = tmpMem;
+        break;
+      }
+    }
+  }
+  return 0;
+}
+
 int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
                                const struct pcap_pkthdr *header,
                                const u_char *packet) {
@@ -287,7 +361,7 @@ int32_t CaptureCxx::ProcessTcp(const PcapCtx_t &context,
   if (processIt == processes.end()) {
     // 说明是新加入的 进行更新
     std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
-    ptr->Parse();
+    ptr->Parse(memory, deltaCpu);
     ptr->AddPacket(cap);
     processes[pid] = std::move(ptr);
   } else {
@@ -375,7 +449,7 @@ int32_t CaptureCxx::ProcessUdp(const PcapCtx_t &context,
   if (processIt == processes.end()) {
     // 说明是新加入的 进行更新
     std::unique_ptr<CapProcess> ptr = std::make_unique<CapProcess>(pid);
-    ptr->Parse();
+    ptr->Parse(memory, deltaCpu);
     ptr->AddPacket(cap);
     processes[pid] = std::move(ptr);
   } else {

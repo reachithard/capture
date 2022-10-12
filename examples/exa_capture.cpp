@@ -36,10 +36,10 @@ static void Packet(const Packet_t* packets, uint32_t* size) {
   uint32_t tmp = *size;
   // 打印包内容
   for (uint32_t idx = 0; idx < tmp; idx++) {
-    std::cout << "hash:" << packets[idx].hash
-              << " family:" << packets[idx].family
-              << " packetSize:" << packets[idx].packetSize;
-    std::cout << std::endl;
+    // std::cout << "hash:" << packets[idx].hash
+    //           << " family:" << packets[idx].family
+    //           << " packetSize:" << packets[idx].packetSize;
+    // std::cout << std::endl;
   }
 }
 
@@ -51,6 +51,7 @@ int main() {
   config.snaplen = 100;
 
   int32_t ret = CaptureInit(&config, &Process, &Packet);
+  std::cout << "ret:" << ret << std::endl;
   while (true) {
     /* code */
     CaptureUpdate(-1);
