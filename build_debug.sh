@@ -24,7 +24,7 @@ function deps()
     rm -rf build/
     mkdir build
     cd build
-    cmake -DDOWNLOAD_THIRDPARTY=false -DCMAKE_VERBOSE_MAKEFILE=on  -DCMAKE_BUILD_TYPE=Debug ..
+    cmake -DDOWNLOAD_THIRDPARTY=true -DCMAKE_VERBOSE_MAKEFILE=on  -DCMAKE_BUILD_TYPE=Debug ..
     make -j${JOB_NUM}
     cd ${CURRENT_DIR}
 }
