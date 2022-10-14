@@ -43,13 +43,13 @@ function usage()
     echo "-all for build and install deps and this project"
 }
 
-if test $1='-deps'
+if [ $1 = "-deps" ]
 then
     deps
-elif test $1='-build'
+elif [ $1 = "-build" ]
 then
     build
-elif test $1='-all'
+elif [ $1 = "-all" ]
 then
     all
 else
