@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#if __cplusplus
+extern "C" {
+#endif
+
 #define CAPTURE_DSO_VISIBLE __attribute__((visibility("default")))
 #define CAPTURE_DSO_HIDDEN __attribute__((visibility("hidden")))
 
@@ -60,5 +64,9 @@ typedef void (*ProcessInfoCallback)(enum CaptureAction action,
                                     const Process_t *processes, uint32_t *size);
 
 typedef void (*PacketCallback)(const Packet_t *packets, uint32_t *size);
+
+#if __cplusplus
+}
+#endif
 
 #endif // _CAPTURE_POD_H_
