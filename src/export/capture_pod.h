@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-extern "C" {
-
 #define CAPTURE_DSO_VISIBLE __attribute__((visibility("default")))
 #define CAPTURE_DSO_HIDDEN __attribute__((visibility("hidden")))
 
@@ -19,13 +17,13 @@ enum LoopType {
 };
 
 typedef struct CaptureInits {
-  const char* logfile;
+  const char *logfile;
   int32_t ms;
   int32_t snaplen;
   int32_t promise;
-  const char* fliter;
-  char* errorbuf;
-  LoopType loop;
+  const char *fliter;
+  char *errorbuf;
+  enum LoopType loop;
 } CaptureInitt;
 
 typedef struct Process_s {
@@ -51,17 +49,16 @@ enum PacketType { P_TCP, P_UDP };
 
 typedef struct Packet_s {
   char hash[CAPTURE_COMMAN_SIZE];
-  PacketType family;
-  u_char* packet;
+  enum PacketType family;
+  u_char *packet;
   uint32_t packetSize;
 } Packet_t;
 
 enum CaptureAction { ACTION_UPDATE, ACTION_REMOVE };
 
-typedef void (*ProcessInfoCallback)(CaptureAction action,
-                                    const Process_t* processes, uint32_t* size);
+typedef void (*ProcessInfoCallback)(enum CaptureAction action,
+                                    const Process_t *processes, uint32_t *size);
 
-typedef void (*PacketCallback)(const Packet_t* packets, uint32_t* size);
-}
+typedef void (*PacketCallback)(const Packet_t *packets, uint32_t *size);
 
-#endif  // _CAPTURE_POD_H_
+#endif // _CAPTURE_POD_H_

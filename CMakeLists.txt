@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.12)
 project(capture)
 set(CMAKE_CXX_STANDARD 14)
 
+
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE} version")
 
 # 设置基础变量

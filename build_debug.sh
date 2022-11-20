@@ -13,7 +13,7 @@ function build()
     mkdir build
     cd build
     cmake -DDOWNLOAD_THIRDPARTY=false -DCMAKE_VERBOSE_MAKEFILE=on  -DCMAKE_BUILD_TYPE=Debug ..
-    make -j${JOB_NUM}
+    make -j${JOB_NUM} && make install
     cd ${CURRENT_DIR}
 }
 
