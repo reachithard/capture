@@ -11,7 +11,7 @@ SET(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/output)
 
 if(DOWNLOAD_THIRDPARTY)
     add_subdirectory(deps)
-endif()
+else(DOWNLOAD_THIRDPARTY)
 
 # 设置cmake module path路径便于find_package
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -38,3 +38,4 @@ enable_testing()
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 message(STATUS "test")
 add_subdirectory(test)
+endif(DOWNLOAD_THIRDPARTY)
