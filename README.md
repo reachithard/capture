@@ -105,7 +105,6 @@ int main() {
 ```
 ## 写一个资源采集，及其可视化系统（已经完成部分)
 目前使用的是collectd+prometheus+collectd_expoter。项目参考地址[个人仓库](https://github.com/reachithard/collectd);如下图：
-<img src="./docs/resources/collectd.png" width="50%" height="50%" />
 ![资源采集及其可视化](./docs/resources/collectd.png)
 ## 之后的计划
 * 使用ebpf再写一套（但更可能是用ebpf写profiling工具，目前方案是主动采集），提升性能
