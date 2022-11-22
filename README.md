@@ -7,7 +7,7 @@
 * spdlog 本项目的日志库
 
 ## 说明
-本项目是对程序运行状态的监控，包括`network`,`cpu percent`, `memory percent`, `fd cnt`, `io`; 能够帮助开发和运维了解程序的运行状态，本项目导出为c接口的基础库，功能类似top命令+tcpdump命令。能作为资源采集的组成，上报系统中进程的运行情况。（TODO：之后会写一个项目能够上报状态，然后可视化）
+本项目是对程序运行状态的监控，包括`network`,`cpu percent`, `memory percent`, `fd cnt`, `io`; 能够帮助开发和运维了解程序的运行状态，本项目导出为c接口的基础库，功能类似top命令+tcpdump命令。能作为资源采集的组成，上报系统中进程的运行情况。
 
 ## 采集指标
 ### network
@@ -103,15 +103,12 @@ int main() {
   return 0;
 }
 ```
-## 写一个资源采集，及其可视化系统（已经完成部分)
-目前使用的是collectd+prometheus+collectd_expoter。项目参考地址[个人仓库](https://github.com/reachithard/collectd);如下图：
+## 写一个资源采集，及其可视化系统及其告警系统（已经完成部分)
+目前使用的是collectd+prometheus+collectd_expoter。采用该方案，主要是为了借助prometheus的生态，prometheus也有一个进程监控的，但是该进程监控无法监控网络数据，本项目可作为进程监控，以及可作为网络监控以及网络嗅探之类的。      
+项目参考地址[个人仓库](https://github.com/reachithard/collectd)，目前正在重写collectd的构建框架上;如下图：
 ![资源采集及其可视化](./docs/resources/collectd.png)
 ## 之后的计划
-* 使用ebpf再写一套（但更可能是用ebpf写profiling工具，目前方案是主动采集），提升性能
-* 英文文档
-* 其他平台支持，比如windows
-* 性能优化，使用对象池，内存池之类进行优化，减少内存碎片出现
-* 代码优化，及其机构优化
-* 更多协议的支持 比如arp之类协议
-* 
+* 用ebpf写profiling工具，目前方案是主动采集
+* 代码优化，及其结构优化，性能优化，使用对象池，内存池之类进行优化，减少内存碎片出现
 * 完善cmake框架，引入valgrind以及perf，gperf之类的工具，方便开发定位问题
+* 重写collectd，collectd的核心部分局限太大了，如本人写的capture插件，产生的元数据无法被其他插件发送到prometheus，以及prometheus对数据有进行限制，因此无法完成一些功能，比如根据用户名筛选进程名，然后筛选到进程pid
