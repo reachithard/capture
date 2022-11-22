@@ -103,7 +103,9 @@ int main() {
   return 0;
 }
 ```
-
+## 写一个资源采集，及其可视化系统（已经完成部分)
+目前使用的是collectd+prometheus+collectd_expoter。如下图：
+[资源采集及其可视化](./docs/resources/collectd.png)
 ## 之后的计划
 * 使用ebpf再写一套（但更可能是用ebpf写profiling工具，目前方案是主动采集），提升性能
 * 英文文档
@@ -111,5 +113,5 @@ int main() {
 * 性能优化，使用对象池，内存池之类进行优化，减少内存碎片出现
 * 代码优化，及其机构优化
 * 更多协议的支持 比如arp之类协议
-* 写一个资源采集，及其可视化系统（进行中)
+* 
 * 完善cmake框架，引入valgrind以及perf，gperf之类的工具，方便开发定位问题
